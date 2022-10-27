@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using trackingapi.Data;
 using trackingapi.Models;
+using trackingapi.Validation;
 
 namespace trackingapi.Controllers
 {
@@ -11,8 +11,14 @@ namespace trackingapi.Controllers
     public class IssueController : ControllerBase
     {
         private readonly IssueDbContext _context;
+        private readonly AccountNumberValidation _validation;
 
-        public IssueController(IssueDbContext context) => _context = context;
+        public IssueController(IssueDbContext context)
+        {
+            _context = context;
+            _validation = new AccountNumberValidation();
+        }
+        
 
         [HttpGet]
         public async Task<IEnumerable<Issue>> Get()
@@ -34,6 +40,11 @@ namespace trackingapi.Controllers
         {
             await _context.Issues.AddAsync(issue);
             await _context.SaveChangesAsync();
+
+            if (!_validation.IsValid(issue.AccountNumber))
+            {
+                return Problem("Incorrect account number");
+            }
 
             return CreatedAtAction(nameof(GetById), new { id = issue.Id }, issue);
         }
@@ -67,4 +78,5 @@ namespace trackingapi.Controllers
         }
 
     }
+
 }
